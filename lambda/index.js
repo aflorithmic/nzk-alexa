@@ -323,7 +323,13 @@ const ErrorHandler = {
 
 const LoadPersistentAttributesRequestInterceptor = {
   async process(handlerInput) {
-    const persistentAttributes = await handlerInput.attributesManager.getPersistentAttributes();
+    let persistentAttributes = {};
+    try {
+      persistentAttributes = await handlerInput.attributesManager.getPersistentAttributes();
+    } catch (e) {
+      console.log(e);
+      console.log(handlerInput);
+    }
 
     // Check if user is invoking the skill the first time and initialize preset values
     if (Object.keys(persistentAttributes).length === 0) {
