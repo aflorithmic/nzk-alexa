@@ -299,6 +299,24 @@ const AudioPlayerEventHandler = {
   }
 };
 
+// Generic error handling to capture any syntax or routing errors. If you receive an error
+// stating the request handler chain is not found, you have not implemented a handler for
+// the intent being invoked or included it in the skill builder below.
+const ErrorHandler = {
+  canHandle(handlerInput) {
+    console.log(handlerInput.requestEnvelope.request.type);
+    return true;
+  },
+  handle(handlerInput, error) {
+    console.log("ErrorHandler");
+    console.log(error);
+    console.log(`Error handled: ${error.message}`);
+    const message = "Sorry, I don't understand you. You can say, my animal is Trompy the elephant.";
+
+    return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
+  }
+};
+
 const controller = {
   async play(handlerInput, query) {
     const url = await getHandshakeResult(query);
