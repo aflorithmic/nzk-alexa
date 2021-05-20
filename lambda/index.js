@@ -275,14 +275,21 @@ const AudioPlayerEventHandler = {
     console.log(audioPlayerEventName);
     switch (audioPlayerEventName) {
       case "PlaybackStarted":
+        playbackInfo.inPlaybackSession = true;
+        playbackInfo.hasPreviousPlaybackSession = true;
         break;
       case "PlaybackFinished":
+        playbackInfo.inPlaybackSession = false;
+        playbackInfo.hasPreviousPlaybackSession = false;
         break;
       case "PlaybackStopped":
+        playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
       case "PlaybackNearlyFinished":
         break;
       case "PlaybackFailed":
+        playbackInfo.inPlaybackSession = false;
+        console.log(`Playback Failed: ${handlerInput.requestEnvelope.request.error}`);
         break;
       default:
         throw new Error("Should never reach here!");
