@@ -133,7 +133,13 @@ const CancelAndStopIntentHandler = {
   },
   handle(handlerInput) {
     console.log("CancelAndStopIntentHandler");
-    return controller.stop(handlerInput, "Goodbye!");
+    // TODO: this should not be always true
+    const isKidsPlusUser = true;
+    return controller.stop(
+      handlerInput,
+      isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
+      !isKidsPlusUser
+    );
   }
 };
 
