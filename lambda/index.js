@@ -185,7 +185,7 @@ const PlaySoundIntentHandler = {
     console.log("PlaySound");
     const speechText = handlerInput.requestEnvelope.request.intent.slots.nameQuery.value;
     if (speechText) {
-      return controller.play(handlerInput, speechText);
+      return controller.search(handlerInput, speechText);
     } else {
       return handlerInput.responseBuilder.speak("You can say, open Alex, to begin.").getResponse();
     }
