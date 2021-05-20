@@ -35,7 +35,7 @@ function getRandomWelcomeMessage() {
       ' <amazon:domain name="fun"> Roar like a lion to get started! </amazon:domain> <break time="3s"/>'
     ];
     const question =
-      ' <amazon:emotion name="excited" intensity="high"> Brilliant! Now, <break time="800ms"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level="strong"> <break time="400ms"/> My animal is </emphasis> Luca. What is yours?';
+      ' <amazon:emotion name="excited" intensity="high"> Brilliant! Now, <break time="800ms"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level="strong"> <break time="400ms"/> My animal is </emphasis> Lucas. What is yours?';
     const randomScript = items[Math.floor(Math.random() * items.length)];
     console.log("🚀 ~ randomScript", randomScript);
     const message = init + randomScript + question;
