@@ -3,6 +3,7 @@
 // session persistence, api calls, and more.
 const Alexa = require("ask-sdk-core");
 const { getHandshakeResult } = require("./util");
+const { dynamoDBTableName } = require("./constants");
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
