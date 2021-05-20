@@ -20,7 +20,7 @@ module.exports.getHandshakeResult = async function (username = "") {
     });
     const { handshakeTrack } = data;
     console.log("🚀 ~ handshakeTrack", handshakeTrack);
-    return handshakeTrack;
+    return { url: handshakeTrack, script: SCRIPT };
   } catch (ex) {
     console.log(ex);
     throw ex;
