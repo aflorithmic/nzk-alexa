@@ -54,6 +54,16 @@
         {
           "name": "AMAZON.NavigateHomeIntent",
           "samples": []
+        },
+        {
+          "name": "AMAZON.YesIntent",
+          "slots": [],
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "slots": [],
+          "samples": []
         }
       ],
       "types": [
