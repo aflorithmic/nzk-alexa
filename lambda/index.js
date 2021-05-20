@@ -46,7 +46,7 @@ function getRandomWelcomeMessage() {
   }
 }
 
-function prepareInitialResponse() {
+async function prepareInitialResponse() {
   const playbackInfo = await getPlaybackInfo(handlerInput);
   let message = getRandomWelcomeMessage();
   let reprompt = "You can say, open Alex, to begin.";
