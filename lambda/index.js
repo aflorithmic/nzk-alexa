@@ -67,6 +67,7 @@ const LaunchRequestHandler = {
   handle(handlerInput) {
     console.log("LaunchRequestHandler");
     console.log(handlerInput);
+
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
 
