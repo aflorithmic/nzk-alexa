@@ -9,7 +9,7 @@ const { getHandshakeResult } = require("./util");
     all entitled products to render Skill CX accordingly
 */
 function getAllEntitledProducts(inSkillProductList) {
-  const entitledProductList = inSkillProductList.filter(record => record.entitled === 'ENTITLED');
+  const entitledProductList = inSkillProductList.filter((record) => record.entitled === "ENTITLED");
   return entitledProductList;
 }
 
@@ -18,30 +18,32 @@ function getAllEntitledProducts(inSkillProductList) {
     entitled products.
 */
 function getSpeakableListOfProducts(entitleProductsList) {
-  const productNameList = entitleProductsList.map(item => item.name);
-  let productListSpeech = productNameList.join(', '); // Generate a single string with comma separated product names
-  productListSpeech = productListSpeech.replace(/_([^_]*)$/, 'and $1'); // Replace last comma with an 'and '
+  const productNameList = entitleProductsList.map((item) => item.name);
+  let productListSpeech = productNameList.join(", "); // Generate a single string with comma separated product names
+  productListSpeech = productListSpeech.replace(/_([^_]*)$/, "and $1"); // Replace last comma with an 'and '
   return productListSpeech;
 }
 
 function getRandomWelcomeMessage() {
   try {
-    const init = " <amazon:emotion name=\"excited\" intensity=\"medium\"> Hello! Welcome to Night Zookeeper Write and Draw. </amazon:emotion> The new Night Zookeeper Alexa Skill. "
+    const init =
+      ' <amazon:emotion name="excited" intensity="medium"> Hello! Welcome to Night Zookeeper Write and Draw. </amazon:emotion> The new Night Zookeeper Alexa Skill. ';
     const items = [
-      " <amazon:domain name=\"fun\"> Sing like a bird to get started! </amazon:domain> <break time=\"3s\"/>",
-      " <amazon:domain name=\"fun\"> Nay like a horse to get started! </amazon:domain> <break time=\"3s\"/>",
-      " <amazon:domain name=\"fun\"> Roar like a lion to get started! </amazon:domain> <break time=\"3s\"/>"
-    ]
-    const question = " <amazon:emotion name=\"excited\" intensity=\"high\"> Brilliant! Now, <break time=\"800ms\"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level=\"strong\"> <break time=\"400ms\"/> My animal is </emphasis> Luca. What is yours?"
+      ' <amazon:domain name="fun"> Sing like a bird to get started! </amazon:domain> <break time="3s"/>',
+      ' <amazon:domain name="fun"> Nay like a horse to get started! </amazon:domain> <break time="3s"/>',
+      ' <amazon:domain name="fun"> Roar like a lion to get started! </amazon:domain> <break time="3s"/>'
+    ];
+    const question =
+      ' <amazon:emotion name="excited" intensity="high"> Brilliant! Now, <break time="800ms"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level="strong"> <break time="400ms"/> My animal is </emphasis> Luca. What is yours?';
     const randomScript = items[Math.floor(Math.random() * items.length)];
     console.log("🚀 ~ randomScript", randomScript);
     const message = init + randomScript + question;
-    return message
+    return message;
   } catch (ex) {
     console.log(ex);
     throw ex;
   }
-};
+}
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -49,7 +51,7 @@ const LaunchRequestHandler = {
   },
   handle(handlerInput) {
     console.log("LaunchRequestHandler");
-    console.log(handlerInput)
+    console.log(handlerInput);
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
     return ms.getInSkillProducts(locale).then(
@@ -60,26 +62,26 @@ const LaunchRequestHandler = {
 
           return handlerInput.responseBuilder
             .speak(getRandomWelcomeMessage())
-            .reprompt('You can say, open Alex, to begin.')
+            .reprompt("You can say, open Alex, to begin.")
             .getResponse();
-            // .speak(`Welcome to Night Zookeeper. You currently own ${getSpeakableListOfProducts(entitledProducts)}` +
-            //   ' products. Say open and your name to start listening your personalised story.')
+          // .speak(`Welcome to Night Zookeeper. You currently own ${getSpeakableListOfProducts(entitledProducts)}` +
+          //   ' products. Say open and your name to start listening your personalised story.')
         }
         // Not entitled to anything yet.
-        console.log('No entitledProducts');
+        console.log("No entitledProducts");
         return handlerInput.responseBuilder
           .speak(getRandomWelcomeMessage())
-          .reprompt('You can say, open Alex, to begin.')
+          .reprompt("You can say, open Alex, to begin.")
           .getResponse();
-          //.speak(`Welcome to Night Zookeeper. Say open and your name to start listening your personalised story.`)
+        //.speak(`Welcome to Night Zookeeper. Say open and your name to start listening your personalised story.`)
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
 
         return handlerInput.responseBuilder
-          .speak('Something went wrong in loading your purchase history')
+          .speak("Something went wrong in loading your purchase history")
           .getResponse();
-      },
+      }
     );
   }
 };
