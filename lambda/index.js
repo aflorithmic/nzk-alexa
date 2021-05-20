@@ -317,6 +317,34 @@ const ErrorHandler = {
   }
 };
 
+// Interceptors
+
+const LoadPersistentAttributesRequestInterceptor = {
+  async process(handlerInput) {
+    const persistentAttributes = await handlerInput.attributesManager.getPersistentAttributes();
+
+    // Check if user is invoking the skill the first time and initialize preset values
+    if (Object.keys(persistentAttributes).length === 0) {
+      handlerInput.attributesManager.setPersistentAttributes({
+        playbackInfo: {
+          playedScripts: [],
+          offsetInMilliseconds: 0,
+          query: "",
+          url: "",
+          inPlaybackSession: false,
+          hasPreviousPlaybackSession: false
+        }
+      });
+    }
+  }
+};
+
+const SavePersistentAttributesResponseInterceptor = {
+  async process(handlerInput) {
+    await handlerInput.attributesManager.savePersistentAttributes();
+  }
+};
+
 const controller = {
   async play(handlerInput, query) {
     const url = await getHandshakeResult(query);
