@@ -208,11 +208,56 @@ const ResumePlaybackIntentHandler = {
   }
 };
 
-    return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
+// it can be triggered in two cases:
+// 1. user paused the music and wanna continue now
+// 2. users wants to draw another animal
+const YesIntentHandler = {
+  async canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.YesIntent"
+    );
+  },
+  async handle(handlerInput) {
+    console.log("YesHandler");
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (playbackInfo.inPlaybackSession) {
+      // user wants to draw another animalconst message = "It is great you want to draw again. What is yours next animal?";
+      const reprompt = "You can say, open Alex, to begin.";
+      return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
+    } else {
+      // user wants to resume the paused session
+      return controller.play(handlerInput, "Resuming");
+    }
   }
 };
 
-// Helpers
+// it can be triggered in two cases:
+// 1. user paused the music and doesnt wanna continue
+// 2. users doesnt wanna draw another animal
+const NoIntentHandler = {
+  async canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.NoIntent"
+    );
+  },
+  async handle(handlerInput) {
+    console.log("NoHandler");
+
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (playbackInfo.inPlaybackSession) {
+      // users doesnt wanna draw another animal
+      return handlerInput.responseBuilder.speak("Goodbye").withShouldEndSession(true).getResponse();
+    } else {
+      // user paused the music and doesnt wanna continue
+      playbackInfo.offsetInMilliseconds = 0;
+      return controller.play(handlerInput, "Starting Over");
+    }
+  }
+};
 
 /**
  * Handle Audio Player Events
