@@ -345,6 +345,18 @@ const SavePersistentAttributesResponseInterceptor = {
   }
 };
 
+// Helpers
+
+const getPlaybackInfo = async (handlerInput) => {
+  const attributes = await handlerInput.attributesManager.getPersistentAttributes();
+  return attributes.playbackInfo;
+};
+
+const getOffsetInMilliseconds = (handlerInput) => {
+  // Extracting offsetInMilliseconds received in the request.
+  return handlerInput.requestEnvelope.request.offsetInMilliseconds;
+};
+
 const controller = {
   async play(handlerInput, query) {
     const url = await getHandshakeResult(query);
