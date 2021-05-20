@@ -358,19 +358,39 @@ const getOffsetInMilliseconds = (handlerInput) => {
 };
 
 const controller = {
-  async play(handlerInput, query) {
-    const url = await getHandshakeResult(query);
+  async search(handlerInput, query) {
+    console.log("Search");
+    console.log(query);
+    const { url, script } = await getHandshakeResult(query);
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+    playbackInfo.url = url;
+    playbackInfo.offsetInMilliseconds = 0;
+    playbackInfo.query = query;
+    playbackInfo.playedScripts = [...playbackInfo.playedScripts, script];
+    return this.play(handlerInput, "Playing ");
+  },
+  async play(handlerInput, query, type) {
+    console.log("Play");
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+    const { url, offsetInMilliseconds } = playbackInfo;
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
-    console.log("play");
     responseBuilder
       .speak(`Playing Night Zookeper Story for ${query}`)
-      .withShouldEndSession(true)
-      .addAudioPlayerPlayDirective(playBehavior, url, url, 0, null);
+      .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null);
     return responseBuilder.getResponse();
   },
-  async stop(handlerInput, message) {
-    return handlerInput.responseBuilder.speak(message).addAudioPlayerStopDirective().getResponse();
+  async stop(handlerInput, message, endSession) {
+    if (endSession)
+      return handlerInput.responseBuilder
+        .speak(message)
+        .addAudioPlayerStopDirective()
+        .getResponse();
+    else
+      return handlerInput.responseBuilder
+        .reprompt(message)
+        .addAudioPlayerStopDirective()
+        .getResponse();
   }
 };
 
