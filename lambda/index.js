@@ -416,8 +416,7 @@ exports.handler = Alexa.SkillBuilders.custom()
   .addRequestInterceptors(LoadPersistentAttributesRequestInterceptor)
   .addResponseInterceptors(SavePersistentAttributesResponseInterceptor)
   .addErrorHandlers(ErrorHandler)
-  // .withAutoCreateTable(true)
-  // .withTableName(dynamoDBTableName)
+  .withApiClient(new Alexa.DefaultApiClient())
   .withPersistenceAdapter(
     new ddbAdapter.DynamoDbPersistenceAdapter({
       tableName: dynamoDBTableName,
