@@ -46,6 +46,20 @@ function getRandomWelcomeMessage() {
   }
 }
 
+function prepareInitialResponse() {
+  const playbackInfo = await getPlaybackInfo(handlerInput);
+  let message = getRandomWelcomeMessage();
+  let reprompt = "You can say, open Alex, to begin.";
+
+  if (playbackInfo.hasPreviousPlaybackSession) {
+    playbackInfo.inPlaybackSession = false;
+    message = `You were listening for ${playbackInfo.query}. Would you like to resume?`;
+    reprompt = "You can say yes to resume or no to play from the beginning.";
+  }
+
+  return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
+}
+
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === "LaunchRequest";
