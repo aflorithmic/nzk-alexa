@@ -48,7 +48,7 @@ function getRandomWelcomeMessage() {
   }
 }
 
-async function prepareInitialResponse() {
+async function prepareInitialResponse(handlerInput) {
   const playbackInfo = await getPlaybackInfo(handlerInput);
   let message = getRandomWelcomeMessage();
   let reprompt = "You can say, open Alex, to begin.";
@@ -78,11 +78,11 @@ const LaunchRequestHandler = {
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
-          return prepareInitialResponse();
+          return prepareInitialResponse(handlerInput);
         }
         // Not entitled to anything yet.
         console.log("No entitledProducts");
-        return prepareInitialResponse();
+        return prepareInitialResponse(handlerInput);
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
