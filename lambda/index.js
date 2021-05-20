@@ -167,10 +167,19 @@ const SessionEndedRequestHandler = {
 
 const PlaySoundIntentHandler = {
   async canHandle(handlerInput) {
-    return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === "PlaySoundIntent"
-    );
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (!playbackInfo.inPlaybackSession) {
+      return (
+        Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "PlaySoundIntent"
+      );
+    }
+    if (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "PlaybackController.PlayCommandIssued"
+    ) {
+      return true;
+    }
   },
   handle(handlerInput) {
     console.log("PlaySound");
