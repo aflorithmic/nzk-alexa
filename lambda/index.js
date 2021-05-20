@@ -404,10 +404,15 @@ exports.handler = Alexa.SkillBuilders.custom()
     PlaySoundIntentHandler,
     SystemExceptionHandler,
     HelpIntentHandler,
+    YesIntentHandler,
+    NoIntentHandler,
+    ResumePlaybackIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
     AudioPlayerEventHandler
   )
+  .addRequestInterceptors(LoadPersistentAttributesRequestInterceptor)
+  .addResponseInterceptors(SavePersistentAttributesResponseInterceptor)
   .withApiClient(new Alexa.DefaultApiClient())
   .addErrorHandlers(ErrorHandler)
   .withAutoCreateTable(true)
