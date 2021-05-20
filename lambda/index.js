@@ -69,26 +69,17 @@ const LaunchRequestHandler = {
     console.log(handlerInput);
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+
     return ms.getInSkillProducts(locale).then(
       function reportPurchasedProducts(result) {
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
-
-          return handlerInput.responseBuilder
-            .speak(getRandomWelcomeMessage())
-            .reprompt("You can say, open Alex, to begin.")
-            .getResponse();
-          // .speak(`Welcome to Night Zookeeper. You currently own ${getSpeakableListOfProducts(entitledProducts)}` +
-          //   ' products. Say open and your name to start listening your personalised story.')
+          return prepareInitialResponse();
         }
         // Not entitled to anything yet.
         console.log("No entitledProducts");
-        return handlerInput.responseBuilder
-          .speak(getRandomWelcomeMessage())
-          .reprompt("You can say, open Alex, to begin.")
-          .getResponse();
-        //.speak(`Welcome to Night Zookeeper. Say open and your name to start listening your personalised story.`)
+        return prepareInitialResponse();
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
