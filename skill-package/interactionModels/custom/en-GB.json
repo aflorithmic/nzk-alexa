@@ -1,0 +1,74 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "night zookeeper",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "PlaySoundIntent",
+          "slots": [
+            {
+              "name": "nameQuery",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "my animal is {nameQuery}",
+            "my animal is a {nameQuery}",
+            "my animal is an {nameQuery}",
+            "the animal is {nameQuery}",
+            "the animal is a {nameQuery}",
+            "my animal is the {nameQuery}",
+            "is {nameQuery}",
+            "animal {nameQuery}",
+            "I want a {nameQuery}",
+            "a {nameQuery}",
+            "my {nameQuery}",
+            "the {nameQuery}",
+            "put {nameQuery}",
+            "the name of my animal is {nameQuery}",
+            "the name is {nameQuery}"
+          ]
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "slots": [],
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "slots": [],
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        }
+      ],
+      "types": [
+        {
+            "name": "ANYTHING",
+            "values": [
+                {
+                    "name": {
+                        "value": "hey"
+                    }
+                }
+            ]
+        }
+      ]
+    }
+  },
+  "version": "10"
+}
