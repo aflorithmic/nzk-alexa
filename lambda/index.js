@@ -374,9 +374,7 @@ const controller = {
     playbackInfo.url = url;
     playbackInfo.offsetInMilliseconds = 0;
     playbackInfo.query = query;
-    playbackInfo.playedScripts = [...playbackInfo.playedScripts, script].filter(
-      (item, pos) => c.indexOf(item) === pos
-    );
+    playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
     return this.play(handlerInput, "Playing ");
   },
   async play(handlerInput, query, type) {
