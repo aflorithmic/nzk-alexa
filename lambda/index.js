@@ -2,6 +2,8 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require("ask-sdk");
+const AWS = require("aws-sdk");
+const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
 const { getHandshakeResult } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
@@ -397,7 +399,7 @@ const controller = {
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
-exports.handler = Alexa.SkillBuilders.standard()
+exports.handler = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
     CheckAudioInterfaceHandler,
     LaunchRequestHandler,
@@ -414,6 +416,16 @@ exports.handler = Alexa.SkillBuilders.standard()
   .addRequestInterceptors(LoadPersistentAttributesRequestInterceptor)
   .addResponseInterceptors(SavePersistentAttributesResponseInterceptor)
   .addErrorHandlers(ErrorHandler)
-  .withAutoCreateTable(true)
-  .withTableName(dynamoDBTableName)
+  // .withAutoCreateTable(true)
+  // .withTableName(dynamoDBTableName)
+  .withPersistenceAdapter(
+    new ddbAdapter.DynamoDbPersistenceAdapter({
+      tableName: dynamoDBTableName,
+      createTable: true,
+      dynamoDBClient: new AWS.DynamoDB({
+        apiVersion: "latest",
+        region: "eu-west-1"
+      })
+    })
+  )
   .lambda();
