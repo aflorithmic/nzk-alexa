@@ -410,4 +410,6 @@ exports.handler = Alexa.SkillBuilders.custom()
   )
   .withApiClient(new Alexa.DefaultApiClient())
   .addErrorHandlers(ErrorHandler)
+  .withAutoCreateTable(true)
+  .withTableName(dynamoDBTableName)
   .lambda();
