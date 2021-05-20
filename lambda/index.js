@@ -192,19 +192,21 @@ const PlaySoundIntentHandler = {
   }
 };
 
-// Generic error handling to capture any syntax or routing errors. If you receive an error
-// stating the request handler chain is not found, you have not implemented a handler for
-// the intent being invoked or included it in the skill builder below.
-const ErrorHandler = {
-  canHandle(handlerInput) {
-    console.log(handlerInput.requestEnvelope.request.type);
-    return true;
+const ResumePlaybackIntentHandler = {
+  async canHandle(handlerInput) {
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    return (
+      playbackInfo.inPlaybackSession &&
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      (Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.PlayIntent" ||
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.ResumeIntent")
+    );
   },
-  handle(handlerInput, error) {
-    console.log("ErrorHandler");
-    console.log(error);
-    console.log(`Error handled: ${error.message}`);
-    const message = "Sorry, I don't understand you. You can say, my animal is Trompy the elephant.";
+  handle(handlerInput) {
+    return controller.play(handlerInput, "Resuming ");
+  }
+};
 
     return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
   }
