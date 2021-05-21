@@ -1,15 +1,18 @@
 // This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK (v2).
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
-const Alexa = require("ask-sdk-core");
+const Alexa = require("ask-sdk");
+const AWS = require("aws-sdk");
+const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
 const { getHandshakeResult } = require("./util");
+const { dynamoDBTableName } = require("./constants");
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
     all entitled products to render Skill CX accordingly
 */
 function getAllEntitledProducts(inSkillProductList) {
-  const entitledProductList = inSkillProductList.filter(record => record.entitled === 'ENTITLED');
+  const entitledProductList = inSkillProductList.filter((record) => record.entitled === "ENTITLED");
   return entitledProductList;
 }
 
@@ -18,30 +21,46 @@ function getAllEntitledProducts(inSkillProductList) {
     entitled products.
 */
 function getSpeakableListOfProducts(entitleProductsList) {
-  const productNameList = entitleProductsList.map(item => item.name);
-  let productListSpeech = productNameList.join(', '); // Generate a single string with comma separated product names
-  productListSpeech = productListSpeech.replace(/_([^_]*)$/, 'and $1'); // Replace last comma with an 'and '
+  const productNameList = entitleProductsList.map((item) => item.name);
+  let productListSpeech = productNameList.join(", "); // Generate a single string with comma separated product names
+  productListSpeech = productListSpeech.replace(/_([^_]*)$/, "and $1"); // Replace last comma with an 'and '
   return productListSpeech;
 }
 
 function getRandomWelcomeMessage() {
   try {
-    const init = " <amazon:emotion name=\"excited\" intensity=\"medium\"> Hello! Welcome to Night Zookeeper Write and Draw. </amazon:emotion> The new Night Zookeeper Alexa Skill. "
+    const init =
+      ' <amazon:emotion name="excited" intensity="medium"> Hello! Welcome to Night Zookeeper Write and Draw. </amazon:emotion> The new Night Zookeeper Alexa Skill. ';
     const items = [
-      " <amazon:domain name=\"fun\"> Sing like a bird to get started! </amazon:domain> <break time=\"3s\"/>",
-      " <amazon:domain name=\"fun\"> Nay like a horse to get started! </amazon:domain> <break time=\"3s\"/>",
-      " <amazon:domain name=\"fun\"> Roar like a lion to get started! </amazon:domain> <break time=\"3s\"/>"
-    ]
-    const question = " <amazon:emotion name=\"excited\" intensity=\"high\"> Brilliant! Now, <break time=\"800ms\"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level=\"strong\"> <break time=\"400ms\"/> My animal is </emphasis> Luca. What is yours?"
+      ' <amazon:domain name="fun"> Sing like a bird to get started! </amazon:domain> <break time="3s"/>',
+      ' <amazon:domain name="fun"> Nay like a horse to get started! </amazon:domain> <break time="3s"/>',
+      ' <amazon:domain name="fun"> Roar like a lion to get started! </amazon:domain> <break time="3s"/>'
+    ];
+    const question =
+      ' <amazon:emotion name="excited" intensity="high"> Brilliant! Now, <break time="800ms"/> What is the name of the magical animal that we are going to create together tonight? </amazon:emotion> For example, <emphasis level="strong"> <break time="400ms"/> My animal is </emphasis> Luca. What is yours?';
     const randomScript = items[Math.floor(Math.random() * items.length)];
     console.log("🚀 ~ randomScript", randomScript);
     const message = init + randomScript + question;
-    return message
+    return message;
   } catch (ex) {
     console.log(ex);
     throw ex;
   }
-};
+}
+
+async function prepareInitialResponse(handlerInput) {
+  const playbackInfo = await getPlaybackInfo(handlerInput);
+  let message = getRandomWelcomeMessage();
+  let reprompt = "You can say, open Alex, to begin.";
+
+  if (playbackInfo.hasPreviousPlaybackSession) {
+    playbackInfo.inPlaybackSession = false;
+    message = `You were listening for ${playbackInfo.query}. Would you like to resume?`;
+    reprompt = "You can say yes to resume or no to play from the beginning.";
+  }
+
+  return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
+}
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -49,37 +68,29 @@ const LaunchRequestHandler = {
   },
   handle(handlerInput) {
     console.log("LaunchRequestHandler");
-    console.log(handlerInput)
+    console.log(handlerInput);
+
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+
     return ms.getInSkillProducts(locale).then(
       function reportPurchasedProducts(result) {
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
-
-          return handlerInput.responseBuilder
-            .speak(getRandomWelcomeMessage())
-            .reprompt('You can say, open Alex, to begin.')
-            .getResponse();
-            // .speak(`Welcome to Night Zookeeper. You currently own ${getSpeakableListOfProducts(entitledProducts)}` +
-            //   ' products. Say open and your name to start listening your personalised story.')
+          return prepareInitialResponse(handlerInput);
         }
         // Not entitled to anything yet.
-        console.log('No entitledProducts');
-        return handlerInput.responseBuilder
-          .speak(getRandomWelcomeMessage())
-          .reprompt('You can say, open Alex, to begin.')
-          .getResponse();
-          //.speak(`Welcome to Night Zookeeper. Say open and your name to start listening your personalised story.`)
+        console.log("No entitledProducts");
+        return prepareInitialResponse(handlerInput);
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
 
         return handlerInput.responseBuilder
-          .speak('Something went wrong in loading your purchase history')
+          .speak("Something went wrong in loading your purchase history")
           .getResponse();
-      },
+      }
     );
   }
 };
@@ -125,7 +136,13 @@ const CancelAndStopIntentHandler = {
   },
   handle(handlerInput) {
     console.log("CancelAndStopIntentHandler");
-    return controller.stop(handlerInput, "Goodbye!");
+    // TODO: this should not be always true
+    const isKidsPlusUser = true;
+    return controller.stop(
+      handlerInput,
+      isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
+      !isKidsPlusUser
+    );
   }
 };
 
@@ -153,19 +170,135 @@ const SessionEndedRequestHandler = {
 
 const PlaySoundIntentHandler = {
   async canHandle(handlerInput) {
-    return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === "PlaySoundIntent"
-    );
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (!playbackInfo.inPlaybackSession) {
+      return (
+        Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "PlaySoundIntent"
+      );
+    }
+    if (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "PlaybackController.PlayCommandIssued"
+    ) {
+      return true;
+    }
   },
   handle(handlerInput) {
     console.log("PlaySound");
     const speechText = handlerInput.requestEnvelope.request.intent.slots.nameQuery.value;
     if (speechText) {
-      return controller.play(handlerInput, speechText);
+      return controller.search(handlerInput, speechText);
     } else {
       return handlerInput.responseBuilder.speak("You can say, open Alex, to begin.").getResponse();
     }
+  }
+};
+
+const ResumePlaybackIntentHandler = {
+  async canHandle(handlerInput) {
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    return (
+      playbackInfo.inPlaybackSession &&
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      (Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.PlayIntent" ||
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.ResumeIntent")
+    );
+  },
+  handle(handlerInput) {
+    return controller.play(handlerInput, "Resuming ");
+  }
+};
+
+// it can be triggered in two cases:
+// 1. user paused the music and wanna continue now
+// 2. users wants to draw another animal
+const YesIntentHandler = {
+  async canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.YesIntent"
+    );
+  },
+  async handle(handlerInput) {
+    console.log("YesHandler");
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (playbackInfo.inPlaybackSession) {
+      // user wants to draw another animal
+      const message = "It is great you want to draw again. What is yours next animal?";
+      const reprompt = "You can say, open Alex, to begin.";
+      return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
+    } else {
+      // user wants to resume the paused session
+      return controller.play(handlerInput, "Resuming");
+    }
+  }
+};
+
+// it can be triggered in two cases:
+// 1. user paused the music and doesnt wanna continue
+// 2. users doesnt wanna draw another animal
+const NoIntentHandler = {
+  async canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.NoIntent"
+    );
+  },
+  async handle(handlerInput) {
+    console.log("NoHandler");
+
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+
+    if (playbackInfo.inPlaybackSession) {
+      // users doesnt wanna draw another animal
+      return handlerInput.responseBuilder.speak("Goodbye").withShouldEndSession(true).getResponse();
+    } else {
+      // user paused the music and doesnt wanna continue
+      playbackInfo.offsetInMilliseconds = 0;
+      return controller.play(handlerInput, "Starting Over");
+    }
+  }
+};
+
+/**
+ * Handle Audio Player Events
+ */
+const AudioPlayerEventHandler = {
+  canHandle(handlerInput) {
+    return handlerInput.requestEnvelope.request.type.startsWith("AudioPlayer.");
+  },
+  async handle(handlerInput) {
+    const { requestEnvelope, responseBuilder } = handlerInput;
+    const audioPlayerEventName = requestEnvelope.request.type.split(".")[1];
+
+    console.log("AudioPlayerEventHandler");
+    console.log(audioPlayerEventName);
+    switch (audioPlayerEventName) {
+      case "PlaybackStarted":
+        playbackInfo.inPlaybackSession = true;
+        playbackInfo.hasPreviousPlaybackSession = true;
+        break;
+      case "PlaybackFinished":
+        playbackInfo.inPlaybackSession = false;
+        playbackInfo.hasPreviousPlaybackSession = false;
+        break;
+      case "PlaybackStopped":
+        playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
+        break;
+      case "PlaybackNearlyFinished":
+        break;
+      case "PlaybackFailed":
+        playbackInfo.inPlaybackSession = false;
+        console.log(`Playback Failed: ${handlerInput.requestEnvelope.request.error}`);
+        break;
+      default:
+        throw new Error("Should never reach here!");
+    }
+
+    return responseBuilder.getResponse();
   }
 };
 
@@ -187,54 +320,86 @@ const ErrorHandler = {
   }
 };
 
-// Helpers
+// Interceptors
 
-/**
- * Handle Audio Player Events
- */
-const AudioPlayerEventHandler = {
-  canHandle(handlerInput) {
-    return handlerInput.requestEnvelope.request.type.startsWith("AudioPlayer.");
-  },
-  async handle(handlerInput) {
-    const { requestEnvelope, responseBuilder } = handlerInput;
-    const audioPlayerEventName = requestEnvelope.request.type.split(".")[1];
-
-    console.log("AudioPlayerEventHandler");
-    console.log(audioPlayerEventName);
-    switch (audioPlayerEventName) {
-      case "PlaybackStarted":
-        break;
-      case "PlaybackFinished":
-        break;
-      case "PlaybackStopped":
-        break;
-      case "PlaybackNearlyFinished":
-        break;
-      case "PlaybackFailed":
-        break;
-      default:
-        throw new Error("Should never reach here!");
+const LoadPersistentAttributesRequestInterceptor = {
+  async process(handlerInput) {
+    let persistentAttributes = {};
+    try {
+      persistentAttributes = await handlerInput.attributesManager.getPersistentAttributes();
+    } catch (e) {
+      console.log(e);
+      console.log(handlerInput);
     }
 
-    return responseBuilder.getResponse();
+    // Check if user is invoking the skill the first time and initialize preset values
+    if (Object.keys(persistentAttributes).length === 0) {
+      handlerInput.attributesManager.setPersistentAttributes({
+        playbackInfo: {
+          playedScripts: [],
+          offsetInMilliseconds: 0,
+          query: "",
+          url: "",
+          inPlaybackSession: false,
+          hasPreviousPlaybackSession: false
+        }
+      });
+    }
   }
 };
 
+const SavePersistentAttributesResponseInterceptor = {
+  async process(handlerInput) {
+    await handlerInput.attributesManager.savePersistentAttributes();
+  }
+};
+
+// Helpers
+
+const getPlaybackInfo = async (handlerInput) => {
+  const attributes = await handlerInput.attributesManager.getPersistentAttributes();
+  return attributes.playbackInfo;
+};
+
+const getOffsetInMilliseconds = (handlerInput) => {
+  // Extracting offsetInMilliseconds received in the request.
+  return handlerInput.requestEnvelope.request.offsetInMilliseconds;
+};
+
 const controller = {
-  async play(handlerInput, query) {
-    const url = await getHandshakeResult(query);
+  async search(handlerInput, query) {
+    console.log("Search");
+    console.log(query);
+    const { url, script } = await getHandshakeResult(query);
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+    playbackInfo.url = url;
+    playbackInfo.offsetInMilliseconds = 0;
+    playbackInfo.query = query;
+    playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
+    return this.play(handlerInput, "Playing ");
+  },
+  async play(handlerInput, query, type) {
+    console.log("Play");
+    const playbackInfo = await getPlaybackInfo(handlerInput);
+    const { url, offsetInMilliseconds } = playbackInfo;
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
-    console.log("play");
     responseBuilder
       .speak(`Playing Night Zookeper Story for ${query}`)
-      .withShouldEndSession(true)
-      .addAudioPlayerPlayDirective(playBehavior, url, url, 0, null);
+      .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null);
     return responseBuilder.getResponse();
   },
-  async stop(handlerInput, message) {
-    return handlerInput.responseBuilder.speak(message).addAudioPlayerStopDirective().getResponse();
+  async stop(handlerInput, message, endSession) {
+    if (endSession)
+      return handlerInput.responseBuilder
+        .speak(message)
+        .addAudioPlayerStopDirective()
+        .getResponse();
+    else
+      return handlerInput.responseBuilder
+        .reprompt(message)
+        .addAudioPlayerStopDirective()
+        .getResponse();
   }
 };
 
@@ -248,10 +413,25 @@ exports.handler = Alexa.SkillBuilders.custom()
     PlaySoundIntentHandler,
     SystemExceptionHandler,
     HelpIntentHandler,
+    YesIntentHandler,
+    NoIntentHandler,
+    ResumePlaybackIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
     AudioPlayerEventHandler
   )
-  .withApiClient(new Alexa.DefaultApiClient())
+  .addRequestInterceptors(LoadPersistentAttributesRequestInterceptor)
+  .addResponseInterceptors(SavePersistentAttributesResponseInterceptor)
   .addErrorHandlers(ErrorHandler)
+  .withApiClient(new Alexa.DefaultApiClient())
+  .withPersistenceAdapter(
+    new ddbAdapter.DynamoDbPersistenceAdapter({
+      tableName: dynamoDBTableName,
+      createTable: true,
+      dynamoDBClient: new AWS.DynamoDB({
+        apiVersion: "latest",
+        region: "eu-west-1"
+      })
+    })
+  )
   .lambda();
