@@ -62,6 +62,16 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
+function endOfAudioResponse(handlerInput) {
+  // TODO: this should not be always true
+  const isKidsPlusUser = true;
+  return controller.stop(
+    handlerInput,
+    isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
+    !isKidsPlusUser
+  );
+}
+
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === "LaunchRequest";
@@ -136,13 +146,7 @@ const CancelAndStopIntentHandler = {
   },
   handle(handlerInput) {
     console.log("CancelAndStopIntentHandler");
-    // TODO: this should not be always true
-    const isKidsPlusUser = true;
-    return controller.stop(
-      handlerInput,
-      isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
-      !isKidsPlusUser
-    );
+    return controller.stop(handlerInput, "Pausing ", true);
   }
 };
 
@@ -154,6 +158,10 @@ const SystemExceptionHandler = {
     console.log("SystemExceptionHandler");
     console.log(JSON.stringify(handlerInput.requestEnvelope, null, 2));
     console.log(`System exception encountered: ${handlerInput.requestEnvelope.request.reason}`);
+    return handlerInput.responseBuilder
+      .speak("Sorry, I have encountered an exception. Maybe I need to sleep a bit.")
+      .withShouldEndSession(true)
+      .getResponse();
   }
 };
 
@@ -273,6 +281,7 @@ const AudioPlayerEventHandler = {
   async handle(handlerInput) {
     const { requestEnvelope, responseBuilder } = handlerInput;
     const audioPlayerEventName = requestEnvelope.request.type.split(".")[1];
+    const playbackInfo = await getPlaybackInfo(handlerInput);
 
     console.log("AudioPlayerEventHandler");
     console.log(audioPlayerEventName);
@@ -284,7 +293,7 @@ const AudioPlayerEventHandler = {
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
-        break;
+        return endOfAudioResponse(handlerInput);
       case "PlaybackStopped":
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
@@ -378,16 +387,16 @@ const controller = {
     playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
     return this.play(handlerInput, "Playing ");
   },
-  async play(handlerInput, query, type) {
+  async play(handlerInput, query) {
     console.log("Play");
     const playbackInfo = await getPlaybackInfo(handlerInput);
     const { url, offsetInMilliseconds } = playbackInfo;
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
-    responseBuilder
+    return responseBuilder
       .speak(`Playing Night Zookeper Story for ${query}`)
+      .withShouldEndSession(true)
       .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null);
-    return responseBuilder.getResponse();
   },
   async stop(handlerInput, message, endSession) {
     if (endSession)
