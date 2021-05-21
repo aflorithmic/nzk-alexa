@@ -226,7 +226,8 @@ const YesIntentHandler = {
     const playbackInfo = await getPlaybackInfo(handlerInput);
 
     if (playbackInfo.inPlaybackSession) {
-      // user wants to draw another animalconst message = "It is great you want to draw again. What is yours next animal?";
+      // user wants to draw another animal
+      const message = "It is great you want to draw again. What is yours next animal?";
       const reprompt = "You can say, open Alex, to begin.";
       return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
     } else {
