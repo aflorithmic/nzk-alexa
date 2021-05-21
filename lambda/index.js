@@ -436,7 +436,7 @@ exports.handler = Alexa.SkillBuilders.custom()
   .withPersistenceAdapter(
     new ddbAdapter.DynamoDbPersistenceAdapter({
       tableName: dynamoDBTableName,
-      createTable: true,
+      createTable: false,
       dynamoDBClient: new AWS.DynamoDB({
         apiVersion: "latest",
         region: "eu-west-1"
