@@ -140,13 +140,25 @@ const CancelAndStopIntentHandler = {
     return (
       Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
       (Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.CancelIntent" ||
-        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.StopIntent" ||
-        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.PauseIntent")
+        Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.StopIntent")
     );
   },
   handle(handlerInput) {
     console.log("CancelAndStopIntentHandler");
-    return controller.stop(handlerInput, "Pausing ", true);
+    return handlerInput.responseBuilder.speak("Goodbye").withShouldEndSession(true).getResponse();
+  }
+};
+
+const PauseIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "AMAZON.PauseIntent"
+    );
+  },
+  handle(handlerInput) {
+    console.log("PauseIntentHandler");
+    return controller.stop(handlerInput, "Pausing ");
   }
 };
 
@@ -403,6 +415,7 @@ const controller = {
       return handlerInput.responseBuilder
         .speak(message)
         .addAudioPlayerStopDirective()
+        .withShouldEndSession(true)
         .getResponse();
     else
       return handlerInput.responseBuilder
@@ -426,6 +439,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     NoIntentHandler,
     ResumePlaybackIntentHandler,
     CancelAndStopIntentHandler,
+    PauseIntentHandler,
     SessionEndedRequestHandler,
     AudioPlayerEventHandler
   )
