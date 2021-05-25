@@ -419,7 +419,8 @@ const controller = {
     return responseBuilder
       .speak(`Playing Night Zookeper Story for ${query}`)
       .withShouldEndSession(true)
-      .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null);
+      .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null)
+      .getResponse();
   },
   async stop(handlerInput, message, endSession) {
     if (endSession)
