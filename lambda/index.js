@@ -397,12 +397,23 @@ const controller = {
     playbackInfo.offsetInMilliseconds = 0;
     playbackInfo.query = query;
     playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
-    return this.play(handlerInput, "Playing ");
+    return this.play(handlerInput, "Playing ", {
+      url: playbackInfo.url,
+      offsetInMilliseconds: playbackInfo.offsetInMilliseconds
+    });
   },
-  async play(handlerInput, query) {
+  async play(handlerInput, query, afterSearch) {
     console.log("Play");
-    const playbackInfo = await getPlaybackInfo(handlerInput);
-    const { url, offsetInMilliseconds } = playbackInfo;
+    let url, offsetInMilliseconds;
+    if (!!afterSearch) {
+      url = afterSearch.url;
+      offsetInMilliseconds = afterSearch.offsetInMilliseconds;
+    } else {
+      const playbackInfo = await getPlaybackInfo(handlerInput);
+      url = playbackInfo.url;
+      offsetInMilliseconds = playbackInfo.offsetInMilliseconds;
+    }
+    console.log("url & offset", url, offsetInMilliseconds);
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
     return responseBuilder
