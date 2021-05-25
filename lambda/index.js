@@ -7,6 +7,8 @@ const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
 const { getHandshakeResult } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
+const DEFAULT_REPROMPT = "You can say, open Alex, to begin.";
+
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
     all entitled products to render Skill CX accordingly
@@ -51,7 +53,7 @@ function getRandomWelcomeMessage() {
 async function prepareInitialResponse(handlerInput) {
   const playbackInfo = await getPlaybackInfo(handlerInput);
   let message = getRandomWelcomeMessage();
-  let reprompt = "You can say, open Alex, to begin.";
+  let reprompt = DEFAULT_REPROMPT;
 
   if (playbackInfo.hasPreviousPlaybackSession) {
     playbackInfo.inPlaybackSession = false;
@@ -158,7 +160,7 @@ const PauseIntentHandler = {
   },
   handle(handlerInput) {
     console.log("PauseIntentHandler");
-    return controller.stop(handlerInput, "Pausing ");
+    return controller.stop(handlerInput, "Pausing ", true);
   }
 };
 
@@ -210,7 +212,7 @@ const PlaySoundIntentHandler = {
     if (speechText) {
       return controller.search(handlerInput, speechText);
     } else {
-      return handlerInput.responseBuilder.speak("You can say, open Alex, to begin.").getResponse();
+      return handlerInput.responseBuilder.speak(DEFAULT_REPROMPT).getResponse();
     }
   }
 };
@@ -248,7 +250,7 @@ const YesIntentHandler = {
     if (playbackInfo.inPlaybackSession) {
       // user wants to draw another animal
       const message = "It is great you want to draw again. What is yours next animal?";
-      const reprompt = "You can say, open Alex, to begin.";
+      const reprompt = DEFAULT_REPROMPT;
       return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
     } else {
       // user wants to resume the paused session
@@ -278,7 +280,10 @@ const NoIntentHandler = {
     } else {
       // user paused the music and doesnt wanna continue
       playbackInfo.offsetInMilliseconds = 0;
-      return controller.play(handlerInput, "Starting Over");
+      let message = getRandomWelcomeMessage();
+      let reprompt = DEFAULT_REPROMPT;
+      return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
+      // were starting over in the past
     }
   }
 };
@@ -397,12 +402,12 @@ const controller = {
     playbackInfo.offsetInMilliseconds = 0;
     playbackInfo.query = query;
     playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
-    return this.play(handlerInput, "Playing ", {
+    return this.play(handlerInput, `Playing Night Zookeper Story for ${query} `, {
       url: playbackInfo.url,
       offsetInMilliseconds: playbackInfo.offsetInMilliseconds
     });
   },
-  async play(handlerInput, query, afterSearch) {
+  async play(handlerInput, message, afterSearch) {
     console.log("Play");
     let url, offsetInMilliseconds;
     if (!!afterSearch) {
@@ -417,7 +422,7 @@ const controller = {
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
     return responseBuilder
-      .speak(`Playing Night Zookeper Story for ${query}`)
+      .speak(message)
       .withShouldEndSession(true)
       .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null)
       .getResponse();
@@ -431,6 +436,7 @@ const controller = {
         .getResponse();
     else
       return handlerInput.responseBuilder
+        .speak(message)
         .reprompt(message)
         .addAudioPlayerStopDirective()
         .getResponse();
