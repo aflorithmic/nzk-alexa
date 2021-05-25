@@ -436,6 +436,7 @@ const controller = {
         .getResponse();
     else
       return handlerInput.responseBuilder
+        .speak(message)
         .reprompt(message)
         .addAudioPlayerStopDirective()
         .getResponse();
