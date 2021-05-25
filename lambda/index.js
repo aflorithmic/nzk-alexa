@@ -64,10 +64,10 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-function endOfAudioResponse(handlerInput) {
+async function endOfAudioResponse(handlerInput) {
   // TODO: this should not be always true
   const isKidsPlusUser = true;
-  return controller.stop(
+  return await controller.stop(
     handlerInput,
     isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
     !isKidsPlusUser
@@ -310,7 +310,7 @@ const AudioPlayerEventHandler = {
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
-        return endOfAudioResponse(handlerInput);
+        return await endOfAudioResponse(handlerInput);
       case "PlaybackStopped":
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
