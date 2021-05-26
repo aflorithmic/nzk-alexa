@@ -312,7 +312,7 @@ const AudioPlayerEventHandler = {
         playbackInfo.hasPreviousPlaybackSession = false;
         return await endOfAudioResponse(handlerInput);
       case "PlaybackStopped":
-        console.log("stopping, offset is ", getOffsetInMilliseconds());
+        console.log("stopping, offset is ", getOffsetInMilliseconds(handlerInput));
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
       case "PlaybackNearlyFinished":
