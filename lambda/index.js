@@ -64,10 +64,10 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-function endOfAudioResponse(handlerInput) {
+async function endOfAudioResponse(handlerInput) {
   // TODO: this should not be always true
   const isKidsPlusUser = true;
-  return controller.stop(
+  return await controller.stop(
     handlerInput,
     isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
     !isKidsPlusUser
@@ -310,8 +310,9 @@ const AudioPlayerEventHandler = {
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
-        return endOfAudioResponse(handlerInput);
+        return await endOfAudioResponse(handlerInput);
       case "PlaybackStopped":
+        console.log("stopping, offset is ", getOffsetInMilliseconds());
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
       case "PlaybackNearlyFinished":
@@ -409,6 +410,7 @@ const controller = {
   },
   async play(handlerInput, message, afterSearch) {
     console.log("Play");
+    console.log(message)
     let url, offsetInMilliseconds;
     if (!!afterSearch) {
       url = afterSearch.url;
@@ -428,6 +430,7 @@ const controller = {
       .getResponse();
   },
   async stop(handlerInput, message, endSession) {
+    console.log("Stop", message, endSession)
     if (endSession)
       return handlerInput.responseBuilder
         .speak(message)
