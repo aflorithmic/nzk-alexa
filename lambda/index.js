@@ -312,6 +312,7 @@ const AudioPlayerEventHandler = {
         playbackInfo.hasPreviousPlaybackSession = false;
         return await endOfAudioResponse(handlerInput);
       case "PlaybackStopped":
+        console.log("stopping, offset is ", getOffsetInMilliseconds());
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
         break;
       case "PlaybackNearlyFinished":
@@ -409,6 +410,7 @@ const controller = {
   },
   async play(handlerInput, message, afterSearch) {
     console.log("Play");
+    console.log(message)
     let url, offsetInMilliseconds;
     if (!!afterSearch) {
       url = afterSearch.url;
@@ -428,6 +430,7 @@ const controller = {
       .getResponse();
   },
   async stop(handlerInput, message, endSession) {
+    console.log("Stop", message, endSession)
     if (endSession)
       return handlerInput.responseBuilder
         .speak(message)
