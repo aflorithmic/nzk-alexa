@@ -8,7 +8,8 @@ const { getHandshakeResult } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
 const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
-const QUESTION_REPROMPT = "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
+const QUESTION_REPROMPT =
+  "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
@@ -28,6 +29,29 @@ function getSpeakableListOfProducts(entitleProductsList) {
   let productListSpeech = productNameList.join(", "); // Generate a single string with comma separated product names
   productListSpeech = productListSpeech.replace(/_([^_]*)$/, "and $1"); // Replace last comma with an 'and '
   return productListSpeech;
+}
+
+async function isKidsPlusUser(handlerInput) {
+  const locale = handlerInput.requestEnvelope.request.locale;
+  const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+  return new Promise((res, rej) => {
+    ms.getInSkillProducts(locale).then(
+      function reportPurchasedProducts(result) {
+        const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
+        if (entitledProducts && entitledProducts.length > 0) {
+          // Customer owns one or more products
+          res(true);
+        }
+        // Not entitled to anything yet.
+        console.log("No entitledProducts");
+        res(false);
+      },
+      function reportPurchasedProductsError(err) {
+        console.log(`Error calling InSkillProducts API: ${err}`);
+        rej(err);
+      }
+    );
+  });
 }
 
 function getRandomWelcomeMessage() {
@@ -66,12 +90,11 @@ async function prepareInitialResponse(handlerInput) {
 }
 
 async function endOfAudioResponse(handlerInput) {
-  // TODO: this should not be always true
-  const isKidsPlusUser = true;
+  const isKidsPlus = await isKidsPlusUser(handlerInput);
   return await controller.stop(
     handlerInput,
-    isKidsPlusUser ? "Would you like to draw another animal?" : "Goodbye",
-    !isKidsPlusUser
+    isKidsPlus ? "Would you like to draw another animal?" : "Goodbye",
+    !isKidsPlus
   );
 }
 
@@ -79,33 +102,18 @@ const LaunchRequestHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === "LaunchRequest";
   },
-  handle(handlerInput) {
+  async handle(handlerInput) {
     console.log("LaunchRequestHandler");
     console.log(handlerInput);
 
-    const locale = handlerInput.requestEnvelope.request.locale;
-    const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-    return ms.getInSkillProducts(locale).then(
-      function reportPurchasedProducts(result) {
-        console.log("--- getInSkillProducts result")
-        console.log(result)
-        const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
-        if (entitledProducts && entitledProducts.length > 0) {
-          // Customer owns one or more products
-          return prepareInitialResponse(handlerInput);
-        }
-        // Not entitled to anything yet.
-        console.log("No entitledProducts");
-        return prepareInitialResponse(handlerInput);
-      },
-      function reportPurchasedProductsError(err) {
-        console.log(`Error calling InSkillProducts API: ${err}`);
-
-        return handlerInput.responseBuilder
-          .speak("Something went wrong in loading your purchase history")
-          .getResponse();
-      }
-    );
+    try {
+      await isKidsPlusUser(handlerInput);
+      return prepareInitialResponse(handlerInput);
+    } catch (e) {
+      return handlerInput.responseBuilder
+        .speak("Something went wrong in loading your purchase history")
+        .getResponse();
+    }
   }
 };
 
@@ -133,7 +141,8 @@ const HelpIntentHandler = {
     );
   },
   handle(handlerInput) {
-    const speakOutput = "Welcome to Night Zookeeper, a kids skill to write and draw with your favourite animals. To get started just say, alexa open, and the name of your animal. For example, say, alexa open Alex";
+    const speakOutput =
+      "Welcome to Night Zookeeper, a kids skill to write and draw with your favourite animals. To get started just say, alexa open, and the name of your animal. For example, say, alexa open Alex";
 
     return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
   }
@@ -312,6 +321,8 @@ const AudioPlayerEventHandler = {
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
+        // return await endOfAudioResponse(handlerInput);
+        // commented because we cant have TTS as a audio response
         break;
       case "PlaybackStopped":
         console.log("stopping, offset is ", getOffsetInMilliseconds(handlerInput));
@@ -343,7 +354,7 @@ const ErrorHandler = {
     console.log("ErrorHandler");
     console.log(error);
     console.log(`Error handled: ${error.message}`);
-    const message = "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
+    const message = QUESTION_REPROMPT;
 
     return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
   }
@@ -412,7 +423,7 @@ const controller = {
   },
   async play(handlerInput, message, afterSearch) {
     console.log("Play");
-    console.log(message)
+    console.log(message);
     let url, offsetInMilliseconds;
     if (!!afterSearch) {
       url = afterSearch.url;
@@ -432,7 +443,7 @@ const controller = {
       .getResponse();
   },
   async stop(handlerInput, message, endSession) {
-    console.log("Stop", message, endSession)
+    console.log("Stop", message, endSession);
     if (endSession)
       return handlerInput.responseBuilder
         .speak(message)
