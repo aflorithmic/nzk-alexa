@@ -322,6 +322,8 @@ const AudioPlayerEventHandler = {
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
+        // return await endOfAudioResponse(handlerInput);
+        // commented because we cant have TTS as a audio response
         break;
       case "PlaybackStopped":
         console.log("stopping, offset is ", getOffsetInMilliseconds(handlerInput));
