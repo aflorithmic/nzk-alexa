@@ -90,7 +90,6 @@ async function prepareInitialResponse(handlerInput) {
 }
 
 async function endOfAudioResponse(handlerInput) {
-  // TODO: this should not be always true
   const isKidsPlus = await isKidsPlusUser(handlerInput);
   return await controller.stop(
     handlerInput,
