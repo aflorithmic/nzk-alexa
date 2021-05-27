@@ -7,7 +7,8 @@ const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
 const { getHandshakeResult } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
-const DEFAULT_REPROMPT = "You can say, open Alex, to begin.";
+const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
+const QUESTION_REPROMPT = "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
@@ -53,7 +54,7 @@ function getRandomWelcomeMessage() {
 async function prepareInitialResponse(handlerInput) {
   const playbackInfo = await getPlaybackInfo(handlerInput);
   let message = getRandomWelcomeMessage();
-  let reprompt = DEFAULT_REPROMPT;
+  let reprompt = QUESTION_REPROMPT;
 
   if (playbackInfo.hasPreviousPlaybackSession) {
     playbackInfo.inPlaybackSession = false;
@@ -84,9 +85,10 @@ const LaunchRequestHandler = {
 
     const locale = handlerInput.requestEnvelope.request.locale;
     const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
-
     return ms.getInSkillProducts(locale).then(
       function reportPurchasedProducts(result) {
+        console.log("--- getInSkillProducts result")
+        console.log(result)
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
@@ -131,7 +133,7 @@ const HelpIntentHandler = {
     );
   },
   handle(handlerInput) {
-    const speakOutput = "You can say hello to me! How can I help?";
+    const speakOutput = "Welcome to Night Zookeeper, a kids skill to write and draw with your favourite animals. To get started just say, alexa open, and the name of your animal. For example, say, alexa open Alex";
 
     return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
   }
@@ -212,7 +214,7 @@ const PlaySoundIntentHandler = {
     if (speechText) {
       return controller.search(handlerInput, speechText);
     } else {
-      return handlerInput.responseBuilder.speak(DEFAULT_REPROMPT).getResponse();
+      return handlerInput.responseBuilder.speak(QUESTION_REPROMPT).getResponse();
     }
   }
 };
@@ -281,7 +283,7 @@ const NoIntentHandler = {
       // user paused the music and doesnt wanna continue
       playbackInfo.offsetInMilliseconds = 0;
       let message = getRandomWelcomeMessage();
-      let reprompt = DEFAULT_REPROMPT;
+      let reprompt = QUESTION_REPROMPT;
       return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
       // were starting over in the past
     }
@@ -341,7 +343,7 @@ const ErrorHandler = {
     console.log("ErrorHandler");
     console.log(error);
     console.log(`Error handled: ${error.message}`);
-    const message = "Sorry, I don't understand you. You can say, my animal is Trompy the elephant.";
+    const message = "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
     return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
   }
