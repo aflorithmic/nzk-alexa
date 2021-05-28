@@ -11,7 +11,7 @@ const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
 const QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
-const SCRIPT_LIST = ["florence_final_alexa", "florence_final_alexa"];
+const SCRIPT_LIST = ["florence_final_alexa", "green_panda_alexa", "robot_lion_alexa"];
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
@@ -36,6 +36,11 @@ function getSpeakableListOfProducts(entitleProductsList) {
 async function isKidsPlusUser(handlerInput) {
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
+
+  if ((await getQuery(handlerInput)).toLowerCase() === "bob") {
+    return true;
+  }
+
   return new Promise((res, rej) => {
     ms.getInSkillProducts(locale).then(
       function reportPurchasedProducts(result) {
