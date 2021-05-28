@@ -112,7 +112,7 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
   if (isKidsPlus) {
     console.log("endOfAudioResponse ~ playback info ==>", playbackInfo);
 
-    // TODO: uncomment below 
+    // TODO: uncomment below
     // if (playbackInfo.index === SCRIPT_LIST.length) {
     //   // the end of scripts
     //   return;
@@ -131,7 +131,6 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
       nextScript,
       expectedPreviousToken,
       offsetInMilliseconds,
-      offsetInMilliseconds,
       query,
       url
     });
@@ -139,7 +138,7 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
     responseBuilder.addAudioPlayerPlayDirective(
       playBehavior,
       url,
-      url,
+      `url-${url}-index-${playbackInfo.index + 1}`,
       offsetInMilliseconds,
       expectedPreviousToken
     );
@@ -385,7 +384,34 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
+        // endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
+
+        // todo remove these below
+        const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
+        const expectedPreviousToken = playbackInfo.token;
+        const offsetInMilliseconds = 0;
+        const playBehavior = "ENQUEUE";
+
+        const query = await getQuery(handlerInput);
+        const { url } = await getHandshakeResult(query, nextScript);
+
+        console.log("end of audio response ==>");
+        console.log({
+          nextScript,
+          expectedPreviousToken,
+          offsetInMilliseconds,
+          query,
+          url
+        });
+
+        responseBuilder.addAudioPlayerPlayDirective(
+          playBehavior,
+          url,
+          `url-${url}-index-${playbackInfo.index + 1}`,
+          offsetInMilliseconds,
+          expectedPreviousToken
+        );
+
         break;
       case "PlaybackFailed":
         playbackInfo.inPlaybackSession = false;
@@ -503,22 +529,30 @@ const controller = {
   async play(handlerInput, message, afterSearch) {
     console.log("Play");
     console.log(message);
-    let url, offsetInMilliseconds;
+    let url, offsetInMilliseconds, index;
     if (!!afterSearch) {
       url = afterSearch.url;
       offsetInMilliseconds = afterSearch.offsetInMilliseconds;
+      index = 0;
     } else {
       const playbackInfo = await getPlaybackInfo(handlerInput);
       url = playbackInfo.url;
       offsetInMilliseconds = playbackInfo.offsetInMilliseconds;
+      index = playbackInfo.index;
     }
-    console.log("url & offset", url, offsetInMilliseconds);
+    console.log("url & offset & index", url, offsetInMilliseconds, index);
     const { responseBuilder } = handlerInput;
     const playBehavior = "REPLACE_ALL";
     return responseBuilder
       .speak(message)
       .withShouldEndSession(true)
-      .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null)
+      .addAudioPlayerPlayDirective(
+        playBehavior,
+        url,
+        `url-${url}-index-${index}`,
+        offsetInMilliseconds,
+        null
+      )
       .getResponse();
   },
   async stop(handlerInput, message) {
