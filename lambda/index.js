@@ -35,7 +35,7 @@ function getSpeakableListOfProducts(entitleProductsList) {
 
 async function isKidsPlusUser(handlerInput) {
   try {
-    const query = await getQuery();
+    const query = await getQuery(handlerInput);
     console.log("🚀 ~ file: index.js ~ line 39 ~ isKidsPlusUser ~ query", query);
     if (query === "Bob" || query === "bob") {
       console.log("yey! kids plus");
