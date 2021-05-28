@@ -11,7 +11,7 @@ const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
 const QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
-const SCRIPT_LIST = ["florence_final_alexa", "florence_final_alexa", "will break deliberately"];
+const SCRIPT_LIST = ["florence_final_alexa", "florence_final_alexa"];
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
@@ -34,21 +34,6 @@ function getSpeakableListOfProducts(entitleProductsList) {
 }
 
 async function isKidsPlusUser(handlerInput) {
-  try {
-    const query = await getQuery(handlerInput);
-    console.log("🚀 ~ file: index.js ~ line 39 ~ isKidsPlusUser ~ query", query);
-    if (query === "Bob" || query === "bob") {
-      console.log("yey! kids plus");
-      return true;
-    } else {
-      console.log(":( not a kids plus");
-      return false;
-    }
-  } catch (e) {
-    console.log("error in isKidsPlusUser", e);
-    return false;
-  }
-
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
   return new Promise((res, rej) => {
@@ -109,14 +94,16 @@ async function prepareInitialResponse(handlerInput) {
 async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
   // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
+
+  console.log("endOfAudioResponse, isKidsPlus ", isKidsPlus);
+
   if (isKidsPlus) {
     console.log("endOfAudioResponse ~ playback info ==>", playbackInfo);
 
-    // TODO: uncomment below
-    // if (playbackInfo.index === SCRIPT_LIST.length) {
-    //   // the end of scripts
-    //   return;
-    // }
+    if (playbackInfo.index === SCRIPT_LIST.length) {
+      // the end of scripts
+      return;
+    }
 
     const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
     const expectedPreviousToken = playbackInfo.token;
@@ -142,6 +129,8 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
       offsetInMilliseconds,
       expectedPreviousToken
     );
+
+    console.log("queued the next track");
     return;
   } else {
     return;
@@ -384,34 +373,7 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        // endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
-
-        // todo remove these below
-        const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
-        const expectedPreviousToken = playbackInfo.token;
-        const offsetInMilliseconds = 0;
-        const playBehavior = "ENQUEUE";
-
-        const query = await getQuery(handlerInput);
-        const { url } = await getHandshakeResult(query, nextScript);
-
-        console.log("end of audio response ==>");
-        console.log({
-          nextScript,
-          expectedPreviousToken,
-          offsetInMilliseconds,
-          query,
-          url
-        });
-
-        responseBuilder.addAudioPlayerPlayDirective(
-          playBehavior,
-          url,
-          `url-${url}-index-${playbackInfo.index + 1}`,
-          offsetInMilliseconds,
-          expectedPreviousToken
-        );
-
+        endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
         break;
       case "PlaybackFailed":
         playbackInfo.inPlaybackSession = false;
