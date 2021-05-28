@@ -35,12 +35,17 @@ function getSpeakableListOfProducts(entitleProductsList) {
 
 async function isKidsPlusUser(handlerInput) {
   try {
-    if ((await getQuery()).toLowerCase() === "bob") {
+    const query = await getQuery();
+    console.log("🚀 ~ file: index.js ~ line 39 ~ isKidsPlusUser ~ query", query);
+    if (query === "Bob" || query === "bob") {
+      console.log("yey! kids plus");
       return true;
     } else {
+      console.log(":( not a kids plus");
       return false;
     }
-  } catch {
+  } catch (e) {
+    console.log("error in isKidsPlusUser", e);
     return false;
   }
 
@@ -101,10 +106,18 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-async function endOfAudioResponse(handlerInput, responseBuilder) {
+async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
   // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
   if (isKidsPlus) {
+    console.log("endOfAudioResponse ~ playback info ==>", playbackInfo);
+
+    // TODO: uncomment below 
+    // if (playbackInfo.index === SCRIPT_LIST.length) {
+    //   // the end of scripts
+    //   return;
+    // }
+
     const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
     const expectedPreviousToken = playbackInfo.token;
     const offsetInMilliseconds = 0;
@@ -112,6 +125,16 @@ async function endOfAudioResponse(handlerInput, responseBuilder) {
 
     const query = await getQuery(handlerInput);
     const { url } = await getHandshakeResult(query, nextScript);
+
+    console.log("end of audio response ==>");
+    console.log({
+      nextScript,
+      expectedPreviousToken,
+      offsetInMilliseconds,
+      offsetInMilliseconds,
+      query,
+      url
+    });
 
     responseBuilder.addAudioPlayerPlayDirective(
       playBehavior,
@@ -362,7 +385,7 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        endOfAudioResponse(handlerInput, responseBuilder);
+        endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
         break;
       case "PlaybackFailed":
         playbackInfo.inPlaybackSession = false;
