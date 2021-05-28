@@ -11,6 +11,8 @@ const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
 const QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
+const SCRIPT_LIST = ["florence_final_alexa", "florence_final_alexa", "will break deliberately"];
+
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
     all entitled products to render Skill CX accordingly
@@ -32,6 +34,16 @@ function getSpeakableListOfProducts(entitleProductsList) {
 }
 
 async function isKidsPlusUser(handlerInput) {
+  try {
+    if ((await getQuery()) === "Bob") {
+      return true;
+    } else {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
   return new Promise((res, rej) => {
@@ -89,13 +101,29 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-async function endOfAudioResponse(handlerInput) {
+async function endOfAudioResponse(handlerInput, responseBuilder) {
+  // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
-  return await controller.stop(
-    handlerInput,
-    isKidsPlus ? "Would you like to draw another animal?" : "Goodbye",
-    !isKidsPlus
-  );
+  if (isKidsPlus) {
+    const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
+    const expectedPreviousToken = playbackInfo.token;
+    const offsetInMilliseconds = 0;
+    const playBehavior = "ENQUEUE";
+
+    const query = await getQuery(handlerInput);
+    const { url } = await getHandshakeResult(query, nextScript);
+
+    responseBuilder.addAudioPlayerPlayDirective(
+      playBehavior,
+      url,
+      url,
+      offsetInMilliseconds,
+      expectedPreviousToken
+    );
+    return;
+  } else {
+    return;
+  }
 }
 
 const LaunchRequestHandler = {
@@ -171,7 +199,7 @@ const PauseIntentHandler = {
   },
   handle(handlerInput) {
     console.log("PauseIntentHandler");
-    return controller.stop(handlerInput, "Pausing ", true);
+    return controller.stop(handlerInput, "Pausing ");
   }
 };
 
@@ -315,20 +343,26 @@ const AudioPlayerEventHandler = {
     console.log(audioPlayerEventName);
     switch (audioPlayerEventName) {
       case "PlaybackStarted":
+        playbackInfo.token = getToken(handlerInput);
+        playbackInfo.index = await getIndex(handlerInput);
         playbackInfo.inPlaybackSession = true;
         playbackInfo.hasPreviousPlaybackSession = true;
         break;
       case "PlaybackFinished":
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
+        await setNextIndex(playbackInfo);
         // return await endOfAudioResponse(handlerInput);
         // commented because we cant have TTS as a audio response
         break;
       case "PlaybackStopped":
         console.log("stopping, offset is ", getOffsetInMilliseconds(handlerInput));
         playbackInfo.offsetInMilliseconds = getOffsetInMilliseconds(handlerInput);
+        playbackInfo.token = getToken(handlerInput);
+        playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
+        endOfAudioResponse(handlerInput, responseBuilder);
         break;
       case "PlaybackFailed":
         playbackInfo.inPlaybackSession = false;
@@ -381,7 +415,9 @@ const LoadPersistentAttributesRequestInterceptor = {
           query: "",
           url: "",
           inPlaybackSession: false,
-          hasPreviousPlaybackSession: false
+          hasPreviousPlaybackSession: false,
+          token: "",
+          index: 0
         }
       });
     }
@@ -395,6 +431,25 @@ const SavePersistentAttributesResponseInterceptor = {
 };
 
 // Helpers
+
+const getToken = (handlerInput) => {
+  // Extracting token received in the request.
+  return handlerInput.requestEnvelope.request.token;
+};
+
+async function getIndex(handlerInput) {
+  const attributes = await handlerInput.attributesManager.getPersistentAttributes();
+  return attributes.playbackInfo.index;
+}
+
+async function getQuery(handlerInput) {
+  const attributes = await handlerInput.attributesManager.getPersistentAttributes();
+  return attributes.playbackInfo.query;
+}
+
+async function setNextIndex(playbackInfo) {
+  playbackInfo.index = playbackInfo.index + 1;
+}
 
 const getPlaybackInfo = async (handlerInput) => {
   const attributes = await handlerInput.attributesManager.getPersistentAttributes();
@@ -410,11 +465,12 @@ const controller = {
   async search(handlerInput, query) {
     console.log("Search");
     console.log(query);
-    const { url, script } = await getHandshakeResult(query);
+    const { url, script } = await getHandshakeResult(query, SCRIPT_LIST[0]);
     const playbackInfo = await getPlaybackInfo(handlerInput);
     playbackInfo.url = url;
     playbackInfo.offsetInMilliseconds = 0;
     playbackInfo.query = query;
+    playbackInfo.index = 0;
     playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
     return this.play(handlerInput, `Playing Night Zookeper Story for ${query} `, {
       url: playbackInfo.url,
@@ -442,20 +498,12 @@ const controller = {
       .addAudioPlayerPlayDirective(playBehavior, url, url, offsetInMilliseconds, null)
       .getResponse();
   },
-  async stop(handlerInput, message, endSession) {
-    console.log("Stop", message, endSession);
-    if (endSession)
-      return handlerInput.responseBuilder
-        .speak(message)
-        .addAudioPlayerStopDirective()
-        .withShouldEndSession(true)
-        .getResponse();
-    else
-      return handlerInput.responseBuilder
-        .speak(message)
-        .reprompt(message)
-        .addAudioPlayerStopDirective()
-        .getResponse();
+  async stop(handlerInput, message) {
+    return handlerInput.responseBuilder
+      .speak(message)
+      .addAudioPlayerStopDirective()
+      .withShouldEndSession(true)
+      .getResponse();
   }
 };
 
