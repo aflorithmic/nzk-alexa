@@ -35,7 +35,7 @@ function getSpeakableListOfProducts(entitleProductsList) {
 
 async function isKidsPlusUser(handlerInput) {
   try {
-    if ((await getQuery()) === "Bob") {
+    if ((await getQuery()).toLowerCase() === "bob") {
       return true;
     } else {
       return false;
