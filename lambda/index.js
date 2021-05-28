@@ -34,6 +34,16 @@ function getSpeakableListOfProducts(entitleProductsList) {
 }
 
 async function isKidsPlusUser(handlerInput) {
+  try {
+    if ((await getQuery()) === "Bob") {
+      return true;
+    } else {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
   return new Promise((res, rej) => {
