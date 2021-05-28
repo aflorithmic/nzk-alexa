@@ -131,7 +131,6 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
       nextScript,
       expectedPreviousToken,
       offsetInMilliseconds,
-      offsetInMilliseconds,
       query,
       url
     });
@@ -139,7 +138,7 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
     responseBuilder.addAudioPlayerPlayDirective(
       playBehavior,
       url,
-      url,
+      `url-${url}-index-${playbackInfo.index + 1}`,
       offsetInMilliseconds,
       expectedPreviousToken
     );
