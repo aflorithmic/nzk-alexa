@@ -96,7 +96,7 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
+async function endOfAudioResponse(handlerInput, playbackInfo) {
   // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
 
@@ -106,11 +106,13 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
     console.log("endOfAudioResponse ~ playback info ==>", playbackInfo);
 
     if (playbackInfo.index === SCRIPT_LIST.length) {
+      console.log("end of script list, wont play a next song");
       // the end of scripts
-      return;
+      return false;
     }
 
-    const nextScript = SCRIPT_LIST[playbackInfo.index + 1];
+    const nextIndex = playbackInfo.index + 1;
+    const nextScript = SCRIPT_LIST[nextIndex];
     const expectedPreviousToken = playbackInfo.token;
     const offsetInMilliseconds = 0;
     const playBehavior = "ENQUEUE";
@@ -118,8 +120,9 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
     const query = await getQuery(handlerInput);
     const { url } = await getHandshakeResult(query, nextScript);
 
-    console.log("end of audio response ==>");
+    console.log("next audio data ==>");
     console.log({
+      nextIndex,
       nextScript,
       expectedPreviousToken,
       offsetInMilliseconds,
@@ -127,18 +130,15 @@ async function endOfAudioResponse(handlerInput, playbackInfo, responseBuilder) {
       url
     });
 
-    responseBuilder.addAudioPlayerPlayDirective(
+    return [
       playBehavior,
       url,
-      `url-${url}-index-${playbackInfo.index + 1}`,
+      `url-${url}-index-${nextIndex}`,
       offsetInMilliseconds,
       expectedPreviousToken
-    );
-
-    console.log("queued the next track");
-    return;
+    ];
   } else {
-    return;
+    return false;
   }
 }
 
@@ -368,8 +368,6 @@ const AudioPlayerEventHandler = {
         playbackInfo.inPlaybackSession = false;
         playbackInfo.hasPreviousPlaybackSession = false;
         await setNextIndex(playbackInfo);
-        // return await endOfAudioResponse(handlerInput);
-        // commented because we cant have TTS as a audio response
         break;
       case "PlaybackStopped":
         console.log("stopping, offset is ", getOffsetInMilliseconds(handlerInput));
@@ -378,7 +376,15 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        endOfAudioResponse(handlerInput, playbackInfo, responseBuilder);
+        const shouldEnque = endOfAudioResponse(handlerInput, playbackInfo);
+
+        if (!shouldEnque) {
+          console.log("not enqueing next track");
+        } else {
+          console.log("enqueing next track");
+          responseBuilder.addAudioPlayerPlayDirective(...shouldEnque);
+        }
+
         break;
       case "PlaybackFailed":
         playbackInfo.inPlaybackSession = false;
