@@ -96,14 +96,14 @@ async function prepareInitialResponse(handlerInput) {
   return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
 }
 
-async function endOfAudioResponse(handlerInput, playbackInfo) {
+async function shouldEnqueue(handlerInput, playbackInfo) {
   // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
 
-  console.log("endOfAudioResponse, isKidsPlus ", isKidsPlus);
+  console.log("should enqueue, isKidsPlus ", isKidsPlus);
 
   if (isKidsPlus) {
-    console.log("endOfAudioResponse ~ playback info ==>", playbackInfo);
+    console.log("should enqueue ~ playback info ==>", playbackInfo);
 
     if (playbackInfo.index === SCRIPT_LIST.length) {
       console.log("end of script list, wont play a next song");
@@ -376,13 +376,13 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        const shouldEnque = endOfAudioResponse(handlerInput, playbackInfo);
+        const queueData = shouldEnqueue(handlerInput, playbackInfo);
 
-        if (!shouldEnque) {
+        if (!queueData) {
           console.log("not enqueing next track");
         } else {
           console.log("enqueing next track");
-          responseBuilder.addAudioPlayerPlayDirective(...shouldEnque);
+          responseBuilder.addAudioPlayerPlayDirective(...queueData);
         }
 
         break;
