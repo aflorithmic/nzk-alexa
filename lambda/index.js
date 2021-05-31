@@ -100,10 +100,10 @@ async function shouldEnqueue(handlerInput, playbackInfo) {
   // adding new directive to add new track if kids plus user
   const isKidsPlus = await isKidsPlusUser(handlerInput);
 
-  console.log("should enqueue, isKidsPlus ", isKidsPlus);
+  console.log("should enqueue function, isKidsPlus ", isKidsPlus);
 
   if (isKidsPlus) {
-    console.log("should enqueue ~ playback info ==>", playbackInfo);
+    console.log("should enqueue function ~ playback info ==>", playbackInfo);
 
     if (playbackInfo.index === SCRIPT_LIST.length) {
       console.log("end of script list, wont play a next song");
@@ -376,7 +376,7 @@ const AudioPlayerEventHandler = {
         playbackInfo.index = await getIndex(handlerInput);
         break;
       case "PlaybackNearlyFinished":
-        const queueData = shouldEnqueue(handlerInput, playbackInfo);
+        const queueData = await shouldEnqueue(handlerInput, playbackInfo);
 
         if (!queueData) {
           console.log("not enqueing next track");
