@@ -47,11 +47,13 @@ async function isKidsPlusUser(handlerInput) {
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
+          console.log("there are entitledProducts");
           res(true);
+        } else {
+          // Not entitled to anything yet.
+          console.log("No entitledProducts");
+          res(false);
         }
-        // Not entitled to anything yet.
-        console.log("No entitledProducts");
-        res(false);
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
