@@ -47,11 +47,13 @@ async function isKidsPlusUser(handlerInput) {
         const entitledProducts = getAllEntitledProducts(result.inSkillProducts);
         if (entitledProducts && entitledProducts.length > 0) {
           // Customer owns one or more products
+          console.log("there are entitledProducts");
           res(true);
+        } else {
+          // Not entitled to anything yet.
+          console.log("No entitledProducts");
+          res(false);
         }
-        // Not entitled to anything yet.
-        console.log("No entitledProducts");
-        res(false);
       },
       function reportPurchasedProductsError(err) {
         console.log(`Error calling InSkillProducts API: ${err}`);
@@ -151,9 +153,12 @@ const LaunchRequestHandler = {
     console.log(handlerInput);
 
     try {
-      await isKidsPlusUser(handlerInput);
+      const isKidsPlus = await isKidsPlusUser(handlerInput);
+      console.log("🚀 ~ file: index.js ~ line 157 ~ handle ~ LaunchRequestHandler isKidsPlus? ", isKidsPlus);
       return prepareInitialResponse(handlerInput);
     } catch (e) {
+      console.log("error in the LaunchRequestHandler");
+      console.log(e)
       return handlerInput.responseBuilder
         .speak("Something went wrong in loading your purchase history")
         .getResponse();
