@@ -65,18 +65,6 @@
           "slots": [],
           "samples": []
         }
-      ],
-      "types": [
-        {
-            "name": "ANYTHING",
-            "values": [
-                {
-                    "name": {
-                        "value": "hey"
-                    }
-                }
-            ]
-        }
       ]
     }
   },
