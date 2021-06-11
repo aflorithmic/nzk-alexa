@@ -8,7 +8,8 @@ const { getHandshakeResult } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
 const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
-const QUESTION_REPROMPT =
+const QUESTION_REPROMPT = "I am listening to you";
+const ERROR_QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
 const SCRIPT_LIST = ["florence_final_alexa", "green_panda_alexa", "robot_lion_alexa"];
@@ -37,7 +38,8 @@ async function isKidsPlusUser(handlerInput) {
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
 
-  // if ((await getQuery(handlerInput)).toLowerCase() === "bob") {
+  // const query = await getQuery(handlerInput);
+  // if (query && query.toLowerCase() === "bob") {
   //   return true;
   // }
 
@@ -154,11 +156,14 @@ const LaunchRequestHandler = {
 
     try {
       const isKidsPlus = await isKidsPlusUser(handlerInput);
-      console.log("🚀 ~ file: index.js ~ line 157 ~ handle ~ LaunchRequestHandler isKidsPlus? ", isKidsPlus);
+      console.log(
+        "🚀 ~ file: index.js ~ line 157 ~ handle ~ LaunchRequestHandler isKidsPlus? ",
+        isKidsPlus
+      );
       return prepareInitialResponse(handlerInput);
     } catch (e) {
       console.log("error in the LaunchRequestHandler");
-      console.log(e)
+      console.log(e);
       return handlerInput.responseBuilder
         .speak("Something went wrong in loading your purchase history")
         .getResponse();
@@ -272,7 +277,10 @@ const PlaySoundIntentHandler = {
     if (speechText) {
       return controller.search(handlerInput, speechText);
     } else {
-      return handlerInput.responseBuilder.speak(QUESTION_REPROMPT).reprompt(QUESTION_REPROMPT).getResponse();
+      return handlerInput.responseBuilder
+        .speak(ERROR_QUESTION_REPROMPT)
+        .reprompt(ERROR_QUESTION_REPROMPT)
+        .getResponse();
     }
   }
 };
@@ -340,10 +348,10 @@ const NoIntentHandler = {
     } else {
       // user paused the music and doesnt wanna continue
       playbackInfo.offsetInMilliseconds = 0;
-      let message = getRandomWelcomeMessage();
-      let reprompt = QUESTION_REPROMPT;
-      return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
-      // were starting over in the past
+      return handlerInput.responseBuilder
+        .speak(getRandomWelcomeMessage())
+        .reprompt(DEFAULT_REPROMPT)
+        .getResponse();
     }
   }
 };
@@ -365,7 +373,11 @@ const AudioPlayerEventHandler = {
     switch (audioPlayerEventName) {
       case "PlaybackStarted":
         playbackInfo.token = getToken(handlerInput);
-        playbackInfo.index = await getIndex(handlerInput);
+        const index = await getIndex(handlerInput);
+        playbackInfo.index = index;
+        playbackInfo.playedScripts = [
+          ...new Set([].concat([...playbackInfo.playedScripts, SCRIPT_LIST[index]]))
+        ];
         playbackInfo.inPlaybackSession = true;
         playbackInfo.hasPreviousPlaybackSession = true;
         break;
@@ -415,7 +427,7 @@ const ErrorHandler = {
     console.log("ErrorHandler");
     console.log(error);
     console.log(`Error handled: ${error.message}`);
-    const message = QUESTION_REPROMPT;
+    const message = ERROR_QUESTION_REPROMPT;
 
     return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
   }
@@ -498,7 +510,6 @@ const controller = {
     playbackInfo.offsetInMilliseconds = 0;
     playbackInfo.query = query;
     playbackInfo.index = 0;
-    playbackInfo.playedScripts = [...new Set([].concat([...playbackInfo.playedScripts, script]))];
     return this.play(handlerInput, `Playing Night Zookeper Story for ${query} `, {
       url: playbackInfo.url,
       offsetInMilliseconds: playbackInfo.offsetInMilliseconds
