@@ -9,6 +9,8 @@ const { dynamoDBTableName } = require("./constants");
 
 const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
 const QUESTION_REPROMPT =
+  "I am listening to you";
+const ERROR_QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
 const SCRIPT_LIST = ["florence_final_alexa", "green_panda_alexa", "robot_lion_alexa"];
@@ -272,7 +274,7 @@ const PlaySoundIntentHandler = {
     if (speechText) {
       return controller.search(handlerInput, speechText);
     } else {
-      return handlerInput.responseBuilder.speak(QUESTION_REPROMPT).getResponse();
+      return handlerInput.responseBuilder.speak(ERROR_QUESTION_REPROMPT).getResponse();
     }
   }
 };
@@ -340,10 +342,7 @@ const NoIntentHandler = {
     } else {
       // user paused the music and doesnt wanna continue
       playbackInfo.offsetInMilliseconds = 0;
-      let message = getRandomWelcomeMessage();
-      let reprompt = QUESTION_REPROMPT;
-      return handlerInput.responseBuilder.speak(message).reprompt(reprompt).getResponse();
-      // were starting over in the past
+      return handlerInput.responseBuilder.speak(getRandomWelcomeMessage()).reprompt(DEFAULT_REPROMPT).getResponse();
     }
   }
 };
@@ -415,7 +414,7 @@ const ErrorHandler = {
     console.log("ErrorHandler");
     console.log(error);
     console.log(`Error handled: ${error.message}`);
-    const message = QUESTION_REPROMPT;
+    const message = ERROR_QUESTION_REPROMPT;
 
     return handlerInput.responseBuilder.speak(message).reprompt(message).getResponse();
   }
