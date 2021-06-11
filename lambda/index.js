@@ -39,7 +39,8 @@ async function isKidsPlusUser(handlerInput) {
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
 
-  if ((await getQuery(handlerInput)).toLowerCase() === "bob") {
+  const query = await getQuery(handlerInput);
+  if (query && query.toLowerCase() === "bob") {
     return true;
   }
 
