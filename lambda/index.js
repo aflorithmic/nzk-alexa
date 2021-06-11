@@ -38,10 +38,10 @@ async function isKidsPlusUser(handlerInput) {
   const locale = handlerInput.requestEnvelope.request.locale;
   const ms = handlerInput.serviceClientFactory.getMonetizationServiceClient();
 
-  const query = await getQuery(handlerInput);
-  if (query && query.toLowerCase() === "bob") {
-    return true;
-  }
+  // const query = await getQuery(handlerInput);
+  // if (query && query.toLowerCase() === "bob") {
+  //   return true;
+  // }
 
   return new Promise((res, rej) => {
     ms.getInSkillProducts(locale).then(
@@ -277,7 +277,10 @@ const PlaySoundIntentHandler = {
     if (speechText) {
       return controller.search(handlerInput, speechText);
     } else {
-      return handlerInput.responseBuilder.speak(ERROR_QUESTION_REPROMPT).getResponse();
+      return handlerInput.responseBuilder
+        .speak(ERROR_QUESTION_REPROMPT)
+        .reprompt(ERROR_QUESTION_REPROMPT)
+        .getResponse();
     }
   }
 };
