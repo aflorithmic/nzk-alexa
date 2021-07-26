@@ -4,7 +4,7 @@
 const Alexa = require("ask-sdk");
 const AWS = require("aws-sdk");
 const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
-const { getHandshakeResult } = require("./util");
+const { getHandshakeResult, getScriptList } = require("./util");
 const { dynamoDBTableName } = require("./constants");
 
 const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
@@ -12,7 +12,12 @@ const QUESTION_REPROMPT = "I am listening to you";
 const ERROR_QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
-const SCRIPT_LIST = ["florence_final_alexa", "green_panda_alexa", "robot_lion_alexa"];
+const SCRIPT_LIST = [];
+async function scriptListUpdater() {
+  const scripts = await getScriptList();
+  SCRIPT_LIST.push(...scripts);
+}
+scriptListUpdater();
 
 /*
     Function to demonstrate how to filter inSkillProduct list to get list of
