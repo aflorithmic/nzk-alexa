@@ -509,7 +509,11 @@ const controller = {
   async search(handlerInput, query) {
     console.log("Search");
     console.log(query);
+    console.log("updating the script list");
+    await scriptListUpdater();
+    console.log("updated script list => ", SCRIPT_LIST);
     const { url, script } = await getHandshakeResult(query, SCRIPT_LIST[0]);
+    console.log("HANDSHAKE RESULT: url & script:", url, script);
     const playbackInfo = await getPlaybackInfo(handlerInput);
     playbackInfo.url = url;
     playbackInfo.offsetInMilliseconds = 0;
