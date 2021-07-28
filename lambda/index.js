@@ -12,10 +12,11 @@ const QUESTION_REPROMPT = "I am listening to you";
 const ERROR_QUESTION_REPROMPT =
   "Sorry, I don't understand you. You can say, for example, my animal is Alex.";
 
-const SCRIPT_LIST = [];
+let SCRIPT_LIST = [];
 async function scriptListUpdater() {
   const scripts = await getScriptList();
-  SCRIPT_LIST.push(...scripts);
+  SCRIPT_LIST = scripts;
+  console.log("UPDATED SCRIPT LIST: ", SCRIPT_LIST);
 }
 scriptListUpdater();
 
@@ -509,7 +510,11 @@ const controller = {
   async search(handlerInput, query) {
     console.log("Search");
     console.log(query);
+    console.log("updating the script list");
+    await scriptListUpdater();
+    console.log("updated script list => ", SCRIPT_LIST);
     const { url, script } = await getHandshakeResult(query, SCRIPT_LIST[0]);
+    console.log("HANDSHAKE RESULT: url & script:", url, script);
     const playbackInfo = await getPlaybackInfo(handlerInput);
     playbackInfo.url = url;
     playbackInfo.offsetInMilliseconds = 0;
