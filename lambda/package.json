@@ -12,7 +12,7 @@
     "apiaudio": "^0.5.7",
     "ask-sdk": "^2.10.2",
     "ask-sdk-dynamodb-persistence-adapter": "^2.10.2",
-    "aws-sdk": "2.637.0",
+    "aws-sdk": "2.814.0",
     "axios": "^0.21.1"
   },
   "devDependencies": {
