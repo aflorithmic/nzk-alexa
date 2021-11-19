@@ -9,6 +9,7 @@
   "author": "Amazon Alexa",
   "license": "Apache License",
   "dependencies": {
+    "apiaudio": "^0.5.7",
     "ask-sdk": "^2.10.2",
     "ask-sdk-dynamodb-persistence-adapter": "^2.10.2",
     "aws-sdk": "2.637.0",
