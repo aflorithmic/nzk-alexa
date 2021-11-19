@@ -4,7 +4,7 @@
 const Alexa = require("ask-sdk");
 const AWS = require("aws-sdk");
 const ddbAdapter = require("ask-sdk-dynamodb-persistence-adapter");
-const { getHandshakeResult, getScriptList } = require("./util");
+const { getMastering, getScriptList } = require("./util-api");
 const { dynamoDBTableName } = require("./constants");
 
 const DEFAULT_REPROMPT = "You can say, open night zookeeper, to begin.";
@@ -128,7 +128,7 @@ async function shouldEnqueue(handlerInput, playbackInfo) {
     const playBehavior = "ENQUEUE";
 
     const query = await getQuery(handlerInput);
-    const { url } = await getHandshakeResult(query, nextScript);
+    const { url } = await getMastering(query, nextScript);
 
     console.log("next audio data ==>");
     console.log({
@@ -513,7 +513,7 @@ const controller = {
     console.log("updating the script list");
     await scriptListUpdater();
     console.log("updated script list => ", SCRIPT_LIST);
-    const { url, script } = await getHandshakeResult(query, SCRIPT_LIST[0]);
+    const { url, script } = await getMastering(query, SCRIPT_LIST[0]);
     console.log("HANDSHAKE RESULT: url & script:", url, script);
     const playbackInfo = await getPlaybackInfo(handlerInput);
     playbackInfo.url = url;
